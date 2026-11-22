@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Expense Calendar & Tracker</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #1e293b;
+      --panel-alt: #273549;
+      --border: #334155;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --red: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    button:hover {
+      background: var(--accent-hover);
+      color: #fff;
+    }
+
+    button.secondary {
+      background: var(--panel-alt);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    button.secondary:hover {
+      border-color: var(--accent);
+    }
+
+    button.danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--red);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      padding: 4px 9px;
+      font-size: 0.8rem;
+    }
+
+    button.danger:hover {
+      background: var(--red);
+      color: #fff;
+    }
+
+    /* Summary Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .stat-value {
+      font-size: 1.55rem;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .stat-sub {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* Budget Bar */
+    .budget-bar {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .budget-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    input, select {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.92rem;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* Main Workspace */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1.45fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 860px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+    }
+
+    .cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .cal-header h2 {
+      font-size: 1.15rem;
+    }
+
+    .cal-nav {
+      display: flex;
+      gap: 6px;
+    }
+
+    .weekdays, .days-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+
+    .weekdays div {
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      padding-bottom: 6px;
+    }
+
+    .day-cell {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      min-height: 74px;
+      padding: 6px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: border-color 0.15s ease, transform 0.1s ease;
+    }
+
+    .day-cell:hover {
+      border-color: var(--accent);
+    }
+
+    .day-cell.empty {
+      background: transparent;
+      border-color: transparent;
+      cursor: default;
+    }
+
+    .day-cell.selected {
+      border: 2px solid var(--accent);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .day-cell.today .day-num {
+      background: var(--accent);
+      color: #0f172a;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+
+    .day-num {
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .day-amount {
+      font-size: 0.76rem;
+      font-weight: 700;
+      padding: 2px 5px;
+      border-radius: 4px;
+      text-align: right;
+      word-break: break-all;
+    }
+
+    .amt-ok {
+      color: var(--green);
+      background: rgba(34, 197, 94, 0.12);
+    }
+
+    .amt-warn {
+      color: var(--amber);
+      background: rgba(245, 158, 11, 0.12);
+    }
+
+    .amt-over {
+      color: var(--red);
+      background: rgba(239, 68, 68, 0.15);
+    }
+
+    /* Right Panel: Selected Day Form & List */
+    .selected-title {
+      font-size: 1.1rem;
+      margin-bottom: 4px;
+    }
+
+    .selected-meta {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 14px;
+    }
+
+    .expense-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .expense-form .full {
+      grid-column: 1 / -1;
+    }
+
+    .expense-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 330px;
+      overflow-y: auto;
+    }
+
+    .expense-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .expense-info strong {
+      display: block;
+      font-size: 0.95rem;
+    }
+
+    .expense-info span {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .expense-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .expense-price {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .empty-msg {
+      color: var(--muted);
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Daily Expense Calendar</h1>
+      <div class="header-actions">
+        <button class="secondary" id="todayBtn">Jump to Today</button>
+        <button class="secondary" id="exportBtn">Export JSON</button>
+      </div>
+    </header>
+
+    <!-- Summary Metrics -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Spent Till Now (All Time)</div>
+        <div class="stat-value" id="totalAllTime">₹0.00</div>
+        <div class="stat-sub" id="totalEntriesCount">0 total entries logged</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">This Month's Spending</div>
+        <div class="stat-value" id="totalMonth">₹0.00</div>
+        <div class="stat-sub" id="monthLabelSub">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Selected Date Total</div>
+        <div class="stat-value" id="totalSelectedDay">₹0.00</div>
+        <div class="stat-sub" id="budgetStatusSub">No daily limit set</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Daily Average (Active Days)</div>
+        <div class="stat-value" id="avgPerDay">₹0.00</div>
+        <div class="stat-sub">Across days with spending</div>
+      </div>
+    </section>
+
+    <!-- Daily Budget / Target Setter -->
+    <section class="budget-bar">
+      <div>
+        <strong>Daily Expense Limit:</strong>
+        <span id="currentLimitText" style="color: var(--accent); margin-left: 6px;">Not set</span>
+      </div>
+      <div class="budget-controls">
+        <input type="number" id="dailyLimitInput" min="0" step="10" placeholder="Set daily limit (₹)" />
+        <button id="saveLimitBtn">Save Limit</button>
+      </div>
+    </section>
+
+    <!-- Main Calendar + Daily Entry Editor -->
+    <section class="main-grid">
+      <!-- Calendar View -->
+      <div class="card">
+        <div class="cal-header">
+          <h2 id="monthYearHeading">Month Year</h2>
+          <div class="cal-nav">
+            <button class="secondary" id="prevMonthBtn">&larr; Prev</button>
+            <button class="secondary" id="nextMonthBtn">Next &rarr;</button>
+          </div>
+        </div>
+        <div class="weekdays">
+          <div>Sun</div>
+          <div>Mon</div>
+          <div>Tue</div>
+          <div>Wed</div>
+          <div>Thu</div>
+          <div>Fri</div>
+          <div>Sat</div>
+        </div>
+        <div class="days-grid" id="daysGrid"></div>
+      </div>
+
+      <!-- Selected Day Expense Manager -->
+      <div class="card">
+        <h3 class="selected-title" id="selectedDateHeading">Selected Date</h3>
+        <p class="selected-meta" id="selectedDateMeta">Add an expense item or log what you spent so far today.</p>
+
+        <form class="expense-form" id="expenseForm">
+          <input
+            type="text"
+            id="titleInput"
+            class="full"
+            placeholder="What did you spend on? (e.g., Bus pass, Lunch, Groceries)"
+            required
+          />
+          <input
+            type="number"
+            id="amountInput"
+            min="0.01"
+            step="0.01"
+            placeholder="Amount (₹)"
+            required
+          />
+          <select id="categoryInput">
+            <option value="Food & Dining">Food & Dining</option>
+            <option value="Travel & Commute">Travel & Commute</option>
+            <option value="Bills & Recharge">Bills & Recharge</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Study & Books">Study & Books</option>
+            <option value="Other">Other</option>
+          </select>
+          <button type="submit" class="full">+ Add Expense</button>
+        </form>
+
+        <ul class="expense-list" id="expenseList"></ul>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "daily_expense_tracker_v1";
+    const LIMIT_KEY = "daily_expense_limit_v1";
+
+    const state = {
+      expenses: loadExpenses(), // { "YYYY-MM-DD": [ { id, title, amount, category } ] }
+      dailyLimit: loadLimit(),
+      selectedDate: formatDateISO(new Date()),
+      viewYear: new Date().getFullYear(),
+      viewMonth: new Date().getMonth()
+    };
+
+    function loadExpenses() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveExpenses() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.expenses));
+      } catch (err) {
+        alert("Could not save to browser storage: " + err.message);
+      }
+    }
+
+    function loadLimit() {
+      try {
+        const raw = localStorage.getItem(LIMIT_KEY);
+        const num = parseFloat(raw);
+        return Number.isFinite(num) && num > 0 ? num : 0;
+      } catch {
+        return 0;
+      }
+    }
+
+    function saveLimit(val) {
+      state.dailyLimit = val;
+      try {
+        localStorage.setItem(LIMIT_KEY, String(val));
+      } catch {}
+    }
+
+    function formatDateISO(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatCurrency(num) {
+      return "₹" + Number(num || 0).toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function getDayTotal(dateStr) {
+      const list = state.expenses[dateStr] || [];
+      return list.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    }
+
+    function renderSummary() {
+      let allTimeTotal = 0;
+      let totalEntries = 0;
+      let activeDays = 0;
+      let monthTotal = 0;
+
+      const monthPrefix = `${state.viewYear}-${String(state.viewMonth + 1).padStart(2, "0")}`;
+
+      for (const [dateStr, list] of Object.entries(state.expenses)) {
+        if (!Array.isArray(list) || list.length === 0) continue;
+        const daySum = list.reduce((s, item) => s + Number(item.amount || 0), 0);
+        allTimeTotal += daySum;
+        totalEntries += list.length;
+        if (daySum > 0) activeDays += 1;
+        if (dateStr.startsWith(monthPrefix)) {
+          monthTotal += daySum;
+        }
+      }
+
+      const selectedTotal = getDayTotal(state.selectedDate);
+      const avg = activeDays > 0 ? allTimeTotal / activeDays : 0;
+
+      document.getElementById("totalAllTime").textContent = formatCurrency(allTimeTotal);
+      document.getElementById("totalEntriesCount").textContent =
+        `${totalEntries} ${totalEntries === 1 ? "entry" : "entries"} logged`;
+
+      const monthName = new Date(state.viewYear, state.viewMonth, 1).toLocaleString("default", {
+        month: "long",
+        year: "numeric"
+      });
+      document.getElementById("totalMonth").textContent = formatCurrency(monthTotal);
+      document.getElementById("monthLabelSub").textContent = monthName;
+
+      document.getElementById("totalSelectedDay").textContent = formatCurrency(selectedTotal);
+      document.getElementById("avgPerDay").textContent = formatCurrency(avg);
+
+      const limitText = document.getElementById("currentLimitText");
+      const budgetSub = document.getElementById("budgetStatusSub");
+
+      if (state.dailyLimit > 0) {
+        limitText.textContent = formatCurrency(state.dailyLimit);
+        const diff = state.dailyLimit - selectedTotal;
+        if (diff >= 0) {
+          budgetSub.textContent = `${formatCurrency(diff)} remaining under daily limit`;
+          budgetSub.style.color = "var(--green)";
+        } else {
+          budgetSub.textContent = `${formatCurrency(Math.abs(diff))} over daily limit`;
+          budgetSub.style.color = "var(--red)";
+        }
+      } else {
+        limitText.textContent = "Not set";
+        budgetSub.textContent = "No daily limit set";
+        budgetSub.style.color = "var(--muted)";
+      }
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById("daysGrid");
+      grid.innerHTML = "";
+
+      const firstDay = new Date(state.viewYear, state.viewMonth, 1);
+      const startWeekday = firstDay.getDay();
+      const daysInMonth = new Date(state.viewYear, state.viewMonth + 1, 0).getDate();
+      const todayISO = formatDateISO(new Date());
+
+      document.getElementById("monthYearHeading").textContent = firstDay.toLocaleString("default", {
+        month: "long",
+        year: "numeric"
+      });
+
+      for (let i = 0; i < startWeekday; i++) {
+        const blank = document.createElement("div");
+        blank.className = "day-cell empty";
+        grid.appendChild(blank);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateObj = new Date(state.viewYear, state.viewMonth, day);
+        const dateStr = formatDateISO(dateObj);
+        const total = getDayTotal(dateStr);
+
+        const cell = document.createElement("div");
+        cell.className = "day-cell";
+        if (dateStr === todayISO) cell.classList.add("today");
+        if (dateStr === state.selectedDate) cell.classList.add("selected");
+
+        const top = document.createElement("div");
+        top.className = "day-num";
+        top.textContent = day;
+        cell.appendChild(top);
+
+        if (total > 0) {
+          const badge = document.createElement("div");
+          badge.className = "day-amount";
+          if (state.dailyLimit > 0) {
+            if (total > state.dailyLimit) badge.classList.add("amt-over");
+            else if (total >= state.dailyLimit * 0.8) badge.classList.add("amt-warn");
+            else badge.classList.add("amt-ok");
+          } else {
+            badge.classList.add("amt-ok");
+          }
+          badge.textContent = "₹" + Math.round(total).toLocaleString("en-IN");
+          cell.appendChild(badge);
+        }
+
+        cell.addEventListener("click", () => {
+          state.selectedDate = dateStr;
+          renderAll();
+        });
+
+        grid.appendChild(cell);
+      }
+    }
+
+    function renderSelectedDay() {
+      const [y, m, d] = state.selectedDate.split("-").map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      const formatted = dateObj.toLocaleDateString("en-IN", {
+        weekday: "long",
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+      });
+
+      document.getElementById("selectedDateHeading").textContent = formatted;
+
+      const listEl = document.getElementById("expenseList");
+      listEl.innerHTML = "";
+
+      const items = state.expenses[state.selectedDate] || [];
+      if (items.length === 0) {
+        const empty = document.createElement("li");
+        empty.className = "empty-msg";
+        empty.textContent = "No expenses logged for this date yet.";
+        listEl.appendChild(empty);
+        return;
+      }
+
+      items.forEach((item) => {
+        const li = document.createElement("li");
+        li.className = "expense-item";
+
+        const info = document.createElement("div");
+        info.className = "expense-info";
+        const strong = document.createElement("strong");
+        strong.textContent = item.title;
+        const cat = document.createElement("span");
+        cat.textContent = item.category;
+        info.append(strong, cat);
+
+        const right = document.createElement("div");
+        right.className = "expense-right";
+        const price = document.createElement("span");
+        price.className = "expense-price";
+        price.textContent = formatCurrency(item.amount);
+
+        const delBtn = document.createElement("button");
+        delBtn.className = "danger";
+        delBtn.type = "button";
+        delBtn.textContent = "Delete";
+        delBtn.addEventListener("click", () => {
+          state.expenses[state.selectedDate] = items.filter((x) => x.id !== item.id);
+          if (state.expenses[state.selectedDate].length === 0) {
+            delete state.expenses[state.selectedDate];
+          }
+          saveExpenses();
+          renderAll();
+        });
+
+        right.append(price, delBtn);
+        li.append(info, right);
+        listEl.appendChild(li);
+      });
+    }
+
+    function renderAll() {
+      renderSummary();
+      renderCalendar();
+      renderSelectedDay();
+    }
+
+    // Event Listeners
+    document.getElementById("expenseForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const title = document.getElementById("titleInput").value.trim();
+      const amount = parseFloat(document.getElementById("amountInput").value);
+      const category = document.getElementById("categoryInput").value;
+
+      if (!title || !Number.isFinite(amount) || amount <= 0) return;
+
+      if (!state.expenses[state.selectedDate]) {
+        state.expenses[state.selectedDate] = [];
+      }
+
+      state.expenses[state.selectedDate].push({
+        id: Date.now() + Math.random(),
+        title,
+        amount: Math.round(amount * 100) / 100,
+        category
+      });
+
+      saveExpenses();
+      e.target.reset();
+      renderAll();
+    });
+
+    document.getElementById("saveLimitBtn").addEventListener("click", () => {
+      const val = parseFloat(document.getElementById("dailyLimitInput").value);
+      if (Number.isFinite(val) && val >= 0) {
+        saveLimit(val);
+        renderAll();
+      }
+    });
+
+    document.getElementById("prevMonthBtn").addEventListener("click", () => {
+      state.viewMonth -= 1;
+      if (state.viewMonth < 0) {
+        state.viewMonth = 11;
+        state.viewYear -= 1;
+      }
+      renderAll();
+    });
+
+    document.getElementById("nextMonthBtn").addEventListener("click", () => {
+      state.viewMonth += 1;
+      if (state.viewMonth > 11) {
+        state.viewMonth = 0;
+        state.viewYear += 1;
+      }
+      renderAll();
+    });
+
+    document.getElementById("todayBtn").addEventListener("click", () => {
+      const now = new Date();
+      state.viewYear = now.getFullYear();
+      state.viewMonth = now.getMonth();
+      state.selectedDate = formatDateISO(now);
+      renderAll();
+    });
+
+    document.getElementById("exportBtn").addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(state.expenses, null, 2)], {
+        type: "application/json"
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `expenses-${formatDateISO(new Date())}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    if (state.dailyLimit > 0) {
+      document.getElementById("dailyLimitInput").value = state.dailyLimit;
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>
