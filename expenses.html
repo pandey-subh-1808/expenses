@@ -56,6 +56,7 @@
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
+      align-items: center;
     }
 
     button {
@@ -97,7 +98,6 @@
       color: #fff;
     }
 
-    /* Summary Cards */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -131,8 +131,7 @@
       margin-top: 4px;
     }
 
-    /* Budget Bar */
-    .budget-bar {
+    .bar-card {
       background: var(--panel);
       border: 1px solid var(--border);
       border-radius: 12px;
@@ -145,7 +144,7 @@
       gap: 12px;
     }
 
-    .budget-controls {
+    .bar-controls {
       display: flex;
       align-items: center;
       gap: 8px;
@@ -166,7 +165,11 @@
       border-color: var(--accent);
     }
 
-    /* Main Workspace */
+    .sync-status {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
     .main-grid {
       display: grid;
       grid-template-columns: 1.45fr 1fr;
@@ -226,7 +229,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      transition: border-color 0.15s ease, transform 0.1s ease;
+      transition: border-color 0.15s ease;
     }
 
     .day-cell:hover {
@@ -285,7 +288,6 @@
       background: rgba(239, 68, 68, 0.15);
     }
 
-    /* Right Panel: Selected Day Form & List */
     .selected-title {
       font-size: 1.1rem;
       margin-bottom: 4px;
@@ -363,9 +365,35 @@
       <h1>Daily Expense Calendar</h1>
       <div class="header-actions">
         <button class="secondary" id="todayBtn">Jump to Today</button>
+        <button class="secondary" id="pullCloudBtn">Pull Cloud</button>
         <button class="secondary" id="exportBtn">Export JSON</button>
+        <button class="secondary" id="importBtn">Import JSON</button>
+        <input type="file" id="importFileInput" accept="application/json" hidden />
       </div>
     </header>
+
+    <!-- Cross-Device Cloud Sync Config (Stored locally per device) -->
+    <section class="bar-card">
+      <div>
+        <strong>Cross-Device Cloud Sync (Firebase RTDB):</strong>
+        <span class="sync-status" id="syncStatusText" style="margin-left: 6px;">Local only</span>
+      </div>
+      <div class="bar-controls">
+        <input
+          type="url"
+          id="dbUrlInput"
+          placeholder="https://your-app.firebaseio.com"
+          style="min-width: 240px;"
+        />
+        <input
+          type="text"
+          id="syncKeyInput"
+          placeholder="Private Sync Key (e.g. my-key-123)"
+          style="min-width: 180px;"
+        />
+        <button id="saveSyncBtn">Connect &amp; Sync</button>
+      </div>
+    </section>
 
     <!-- Summary Metrics -->
     <section class="stats-grid">
@@ -392,12 +420,12 @@
     </section>
 
     <!-- Daily Budget / Target Setter -->
-    <section class="budget-bar">
+    <section class="bar-card">
       <div>
         <strong>Daily Expense Limit:</strong>
         <span id="currentLimitText" style="color: var(--accent); margin-left: 6px;">Not set</span>
       </div>
-      <div class="budget-controls">
+      <div class="bar-controls">
         <input type="number" id="dailyLimitInput" min="0" step="10" placeholder="Set daily limit (₹)" />
         <button id="saveLimitBtn">Save Limit</button>
       </div>
@@ -405,7 +433,6 @@
 
     <!-- Main Calendar + Daily Entry Editor -->
     <section class="main-grid">
-      <!-- Calendar View -->
       <div class="card">
         <div class="cal-header">
           <h2 id="monthYearHeading">Month Year</h2>
@@ -426,7 +453,6 @@
         <div class="days-grid" id="daysGrid"></div>
       </div>
 
-      <!-- Selected Day Expense Manager -->
       <div class="card">
         <h3 class="selected-title" id="selectedDateHeading">Selected Date</h3>
         <p class="selected-meta" id="selectedDateMeta">Add an expense item or log what you spent so far today.</p>
@@ -448,11 +474,11 @@
             required
           />
           <select id="categoryInput">
-            <option value="Food & Dining">Food & Dining</option>
-            <option value="Travel & Commute">Travel & Commute</option>
-            <option value="Bills & Recharge">Bills & Recharge</option>
+            <option value="Food & Dining">Food &amp; Dining</option>
+            <option value="Travel & Commute">Travel &amp; Commute</option>
+            <option value="Bills & Recharge">Bills &amp; Recharge</option>
             <option value="Shopping">Shopping</option>
-            <option value="Study & Books">Study & Books</option>
+            <option value="Study & Books">Study &amp; Books</option>
             <option value="Other">Other</option>
           </select>
           <button type="submit" class="full">+ Add Expense</button>
@@ -466,10 +492,12 @@
   <script>
     const STORAGE_KEY = "daily_expense_tracker_v1";
     const LIMIT_KEY = "daily_expense_limit_v1";
+    const SYNC_CFG_KEY = "daily_expense_sync_cfg_v1";
 
     const state = {
-      expenses: loadExpenses(), // { "YYYY-MM-DD": [ { id, title, amount, category } ] }
+      expenses: loadExpenses(),
       dailyLimit: loadLimit(),
+      syncConfig: loadSyncConfig(),
       selectedDate: formatDateISO(new Date()),
       viewYear: new Date().getFullYear(),
       viewMonth: new Date().getMonth()
@@ -484,14 +512,6 @@
       }
     }
 
-    function saveExpenses() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.expenses));
-      } catch (err) {
-        alert("Could not save to browser storage: " + err.message);
-      }
-    }
-
     function loadLimit() {
       try {
         const raw = localStorage.getItem(LIMIT_KEY);
@@ -502,11 +522,101 @@
       }
     }
 
-    function saveLimit(val) {
-      state.dailyLimit = val;
+    function loadSyncConfig() {
       try {
-        localStorage.setItem(LIMIT_KEY, String(val));
+        const raw = localStorage.getItem(SYNC_CFG_KEY);
+        return raw ? JSON.parse(raw) : { dbUrl: "", syncKey: "" };
+      } catch {
+        return { dbUrl: "", syncKey: "" };
+      }
+    }
+
+    function saveSyncConfig(cfg) {
+      state.syncConfig = cfg;
+      try {
+        localStorage.setItem(SYNC_CFG_KEY, JSON.stringify(cfg));
       } catch {}
+    }
+
+    function setSyncStatus(text, color = "var(--muted)") {
+      const el = document.getElementById("syncStatusText");
+      el.textContent = text;
+      el.style.color = color;
+    }
+
+    function getCloudEndpoint() {
+      const base = (state.syncConfig.dbUrl || "").trim().replace(/\/+$/, "");
+      const key = encodeURIComponent((state.syncConfig.syncKey || "").trim());
+      if (!base || !key) return null;
+      return `${base}/expense_trackers/${key}.json`;
+    }
+
+    async function pushToCloud() {
+      const endpoint = getCloudEndpoint();
+      if (!endpoint) {
+        setSyncStatus("Local only (enter DB URL + Sync Key)");
+        return;
+      }
+      setSyncStatus("Syncing...", "var(--amber)");
+      try {
+        const payload = {
+          expenses: state.expenses,
+          dailyLimit: state.dailyLimit,
+          updatedAt: new Date().toISOString()
+        };
+        const res = await fetch(endpoint, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        setSyncStatus("Synced to cloud", "var(--green)");
+      } catch (err) {
+        setSyncStatus(`Sync failed (${err.message})`, "var(--red)");
+      }
+    }
+
+    async function pullFromCloud() {
+      const endpoint = getCloudEndpoint();
+      if (!endpoint) {
+        setSyncStatus("Local only (enter DB URL + Sync Key)");
+        return;
+      }
+      setSyncStatus("Fetching cloud data...", "var(--amber)");
+      try {
+        const res = await fetch(endpoint);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (data && typeof data === "object") {
+          if (data.expenses && typeof data.expenses === "object") {
+            state.expenses = data.expenses;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state.expenses));
+          }
+          if (typeof data.dailyLimit === "number" && data.dailyLimit >= 0) {
+            state.dailyLimit = data.dailyLimit;
+            localStorage.setItem(LIMIT_KEY, String(state.dailyLimit));
+            document.getElementById("dailyLimitInput").value = state.dailyLimit || "";
+          }
+          renderAll();
+          setSyncStatus("Loaded latest cloud data", "var(--green)");
+        } else {
+          setSyncStatus("Connected (no cloud data yet)", "var(--accent)");
+        }
+      } catch (err) {
+        setSyncStatus(`Pull failed (${err.message})`, "var(--red)");
+      }
+    }
+
+    function persistAll(shouldPushCloud = true) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.expenses));
+        localStorage.setItem(LIMIT_KEY, String(state.dailyLimit));
+      } catch (err) {
+        alert("Could not save to browser storage: " + err.message);
+      }
+      if (shouldPushCloud) {
+        pushToCloud();
+      }
     }
 
     function formatDateISO(date) {
@@ -693,7 +803,7 @@
           if (state.expenses[state.selectedDate].length === 0) {
             delete state.expenses[state.selectedDate];
           }
-          saveExpenses();
+          persistAll(true);
           renderAll();
         });
 
@@ -709,7 +819,6 @@
       renderSelectedDay();
     }
 
-    // Event Listeners
     document.getElementById("expenseForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const title = document.getElementById("titleInput").value.trim();
@@ -729,7 +838,7 @@
         category
       });
 
-      saveExpenses();
+      persistAll(true);
       e.target.reset();
       renderAll();
     });
@@ -737,10 +846,20 @@
     document.getElementById("saveLimitBtn").addEventListener("click", () => {
       const val = parseFloat(document.getElementById("dailyLimitInput").value);
       if (Number.isFinite(val) && val >= 0) {
-        saveLimit(val);
+        state.dailyLimit = val;
+        persistAll(true);
         renderAll();
       }
     });
+
+    document.getElementById("saveSyncBtn").addEventListener("click", async () => {
+      const dbUrl = document.getElementById("dbUrlInput").value.trim();
+      const syncKey = document.getElementById("syncKeyInput").value.trim();
+      saveSyncConfig({ dbUrl, syncKey });
+      await pullFromCloud();
+    });
+
+    document.getElementById("pullCloudBtn").addEventListener("click", pullFromCloud);
 
     document.getElementById("prevMonthBtn").addEventListener("click", () => {
       state.viewMonth -= 1;
@@ -769,7 +888,11 @@
     });
 
     document.getElementById("exportBtn").addEventListener("click", () => {
-      const blob = new Blob([JSON.stringify(state.expenses, null, 2)], {
+      const bundle = {
+        expenses: state.expenses,
+        dailyLimit: state.dailyLimit
+      };
+      const blob = new Blob([JSON.stringify(bundle, null, 2)], {
         type: "application/json"
       });
       const url = URL.createObjectURL(blob);
@@ -780,11 +903,69 @@
       URL.revokeObjectURL(url);
     });
 
+    document.getElementById("importBtn").addEventListener("click", () => {
+      document.getElementById("importFileInput").click();
+    });
+
+    document.getElementById("importFileInput").addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        const importedExpenses = parsed.expenses && typeof parsed.expenses === "object"
+          ? parsed.expenses
+          : parsed;
+
+        if (!importedExpenses || typeof importedExpenses !== "object") {
+          throw new Error("Invalid JSON format");
+        }
+
+        for (const [dateStr, items] of Object.entries(importedExpenses)) {
+          if (!Array.isArray(items)) continue;
+          const existing = state.expenses[dateStr] || [];
+          const seenIds = new Set(existing.map((x) => x.id));
+          const merged = [...existing];
+          for (const item of items) {
+            if (item && typeof item.amount === "number" && item.title) {
+              const id = item.id || (Date.now() + Math.random());
+              if (!seenIds.has(id)) {
+                merged.push({ ...item, id });
+              }
+            }
+          }
+          state.expenses[dateStr] = merged;
+        }
+
+        if (typeof parsed.dailyLimit === "number" && parsed.dailyLimit > 0) {
+          state.dailyLimit = parsed.dailyLimit;
+          document.getElementById("dailyLimitInput").value = state.dailyLimit;
+        }
+
+        persistAll(true);
+        renderAll();
+        alert("Expenses imported successfully!");
+      } catch (err) {
+        alert("Could not import JSON: " + err.message);
+      } finally {
+        e.target.value = "";
+      }
+    });
+
     if (state.dailyLimit > 0) {
       document.getElementById("dailyLimitInput").value = state.dailyLimit;
     }
+    if (state.syncConfig.dbUrl) {
+      document.getElementById("dbUrlInput").value = state.syncConfig.dbUrl;
+    }
+    if (state.syncConfig.syncKey) {
+      document.getElementById("syncKeyInput").value = state.syncConfig.syncKey;
+    }
 
     renderAll();
+    if (getCloudEndpoint()) {
+      pullFromCloud();
+    }
   </script>
 </body>
 </html>
