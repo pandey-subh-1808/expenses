@@ -1,971 +1,436 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Daily Expense Calendar & Tracker</title>
-  <style>
-    :root {
-      --bg: #0f172a;
-      --panel: #1e293b;
-      --panel-alt: #273549;
-      --border: #334155;
-      --text: #f1f5f9;
-      --muted: #94a3b8;
-      --accent: #38bdf8;
-      --accent-hover: #0284c7;
-      --green: #22c55e;
-      --amber: #f59e0b;
-      --red: #ef4444;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Expense Calendar & Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef2f6;--card:#fff;--ink:#0f1d2f;--mute:#64748b;--line:#dde4ec;--soft:#f5f8fb;--brand:#0f9d84;--brand-d:#0b7d6a;--warn:#d98a0b;--over:#d64550;--shadow:0 1px 2px rgba(15,29,47,.06),0 8px 24px rgba(15,29,47,.06)}
+[data-theme=dark]{--bg:#0b1320;--card:#121c2d;--ink:#e8eef6;--mute:#8b9bb3;--line:#22304a;--soft:#0e1727;--brand:#2dd4b0;--brand-d:#5eead4;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:Manrope,system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.wrap{max-width:1160px;margin:0 auto;padding:0 20px 48px}
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
+/* top bar */
+.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .in{max-width:1160px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto}
+.logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,#0f9d84,#1b5fa8);display:grid;place-items:center;color:#fff;font:700 18px Fraunces,serif}
+.brand h1{font-size:1.02rem;font-weight:800;letter-spacing:-.01em}
+.brand small{display:block;color:var(--mute);font-size:.74rem;font-weight:600;margin-top:-2px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--line);background:var(--card);padding:8px 14px;border-radius:10px;font-weight:700;font-size:.86rem;cursor:pointer;transition:border-color .15s,transform .05s}
+.btn:hover{border-color:var(--brand)}.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#04251f}
+[data-theme=dark] .btn.primary{color:#04251f}
+.btn.primary:hover{background:var(--brand-d);border-color:var(--brand-d);color:#fff}
+.btn.ghost{background:transparent}
+.btn.sm{padding:5px 10px;font-size:.78rem}
+.btn.danger{color:var(--over)}.btn.danger:hover{background:var(--over);border-color:var(--over);color:#fff}
+.sync-pill{display:flex;align-items:center;gap:8px;padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:var(--card);font-size:.8rem;font-weight:700;color:var(--mute);cursor:pointer}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--mute)}
+.dot.ok{background:var(--brand)}.dot.busy{background:var(--warn)}.dot.err{background:var(--over)}
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      padding: 20px;
-      line-height: 1.5;
-    }
+/* overview */
+section{margin-top:22px}
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
+.sec-h h2{font-size:.82rem;font-weight:800;color:var(--mute);letter-spacing:.02em}
+.overview{display:grid;grid-template-columns:1.25fr 1fr;gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:var(--shadow)}
+.hero{color:#fff;border:0;background:radial-gradient(120% 140% at 0% 0%,#1b5fa8 0,#0d2a4d 55%,#0a3f44 100%);position:relative;overflow:hidden}
+.hero::after{content:"₹";position:absolute;right:-12px;bottom:-60px;font:700 220px Fraunces,serif;opacity:.07}
+.hero .lbl{font-size:.82rem;font-weight:700;opacity:.8}
+.hero .big{font:700 clamp(2.2rem,6vw,3.2rem)/1.1 Fraunces,serif;margin:6px 0 14px;letter-spacing:-.02em}
+.meter{height:10px;border-radius:99px;background:rgba(255,255,255,.18);overflow:hidden}
+.meter i{display:block;height:100%;width:0;border-radius:99px;background:#5eead4;transition:width .5s ease}
+.meter i.warn{background:#fbbf24}.meter i.over{background:#fb7185}
+.hero .sub{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:.82rem;font-weight:600;opacity:.9}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.stat .l{font-size:.76rem;font-weight:700;color:var(--mute)}
+.stat .v{font:700 1.3rem Fraunces,serif;margin-top:2px;letter-spacing:-.01em}
+.stat .s{font-size:.76rem;color:var(--mute);font-weight:600}
 
-    .container {
-      max-width: 1120px;
-      margin: 0 auto;
-    }
+/* categories */
+.stack{display:flex;height:14px;border-radius:99px;overflow:hidden;background:var(--soft);margin:4px 0 14px}
+.stack i{display:block;height:100%;transition:width .4s}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px 24px}
+.lg{display:flex;align-items:center;gap:10px;font-size:.88rem;font-weight:600}
+.lg b{margin-left:auto;font-weight:800}.lg em{font-style:normal;color:var(--mute);font-size:.78rem;width:38px;text-align:right}
+.sw{width:10px;height:10px;border-radius:3px;flex:none}
 
-    header {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
+/* calendar + day */
+.split{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start}
+.cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px}
+.cal-h h3{font:700 1.3rem Fraunces,serif;letter-spacing:-.01em}
+.nav{display:flex;gap:6px}
+.wk,.days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.wk div{text-align:center;font-size:.72rem;font-weight:800;color:var(--mute);padding-bottom:4px}
+.day{min-height:70px;background:var(--soft);border:1px solid transparent;border-radius:12px;padding:6px 7px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;transition:border-color .12s,transform .1s;text-align:left}
+.day:hover{border-color:var(--brand)}
+.day.empty{background:transparent;cursor:default;pointer-events:none}
+.day.sel{border:2px solid var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 18%,transparent)}
+.dn{font-size:.82rem;font-weight:700;width:24px;height:24px;display:grid;place-items:center;border-radius:50%}
+.day.today .dn{background:var(--ink);color:var(--card)}
+.da{font-size:.72rem;font-weight:800;text-align:right;word-break:break-all}
+.day.h1{background:color-mix(in srgb,var(--brand) 14%,var(--soft))}
+.day.h2{background:color-mix(in srgb,var(--brand) 28%,var(--soft))}
+.day.h3{background:color-mix(in srgb,var(--brand) 44%,var(--soft))}
+.day.warn{background:color-mix(in srgb,var(--warn) 30%,var(--soft))}
+.day.over{background:color-mix(in srgb,var(--over) 32%,var(--soft))}
+.key{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;font-size:.74rem;font-weight:700;color:var(--mute)}
+.key span{display:flex;align-items:center;gap:6px}.key i{width:12px;height:12px;border-radius:4px;display:block}
 
-    header h1 {
-      font-size: 1.5rem;
-      font-weight: 700;
-    }
+.day-h h3{font:700 1.2rem Fraunces,serif}
+.day-h p{color:var(--mute);font-size:.84rem;font-weight:600;margin:2px 0 14px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.full{grid-column:1/-1}
+input,select{width:100%;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:.92rem;font-weight:600}
+input:focus,select:focus{outline:none;border-color:var(--brand);background:var(--card)}
+.list{list-style:none;display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto}
+.item{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}
+.item .sw{width:6px;height:34px;border-radius:4px}
+.item .t{flex:1;min-width:0}.item .t strong{display:block;font-size:.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .t span{font-size:.76rem;color:var(--mute);font-weight:600}
+.item .p{font-weight:800}
+.item .acts{display:flex;gap:6px}
+.none{text-align:center;color:var(--mute);font-weight:600;font-size:.9rem;padding:22px 0}
 
-    .header-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
+/* dialog + toast */
+dialog{margin:auto;border:1px solid var(--line);border-radius:20px;padding:22px;width:min(94vw,460px);background:var(--card);color:var(--ink);box-shadow:0 30px 80px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(8,14,26,.55);backdrop-filter:blur(3px)}
+dialog h3{font:700 1.3rem Fraunces,serif;margin-bottom:4px}
+dialog .hint{color:var(--mute);font-size:.82rem;font-weight:600;margin-bottom:14px}
+dialog label{display:block;font-size:.78rem;font-weight:800;color:var(--mute);margin:12px 0 5px}
+.row{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:var(--card);padding:10px 18px;border-radius:999px;font-weight:700;font-size:.86rem;opacity:0;pointer-events:none;transition:.25s;z-index:50}
+#toast.show{opacity:1;transform:translate(-50%,0)}
 
-    button {
-      background: var(--accent);
-      color: #0f172a;
-      border: none;
-      padding: 8px 14px;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s ease;
-    }
-
-    button:hover {
-      background: var(--accent-hover);
-      color: #fff;
-    }
-
-    button.secondary {
-      background: var(--panel-alt);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-
-    button.secondary:hover {
-      border-color: var(--accent);
-    }
-
-    button.danger {
-      background: rgba(239, 68, 68, 0.15);
-      color: var(--red);
-      border: 1px solid rgba(239, 68, 68, 0.35);
-      padding: 4px 9px;
-      font-size: 0.8rem;
-    }
-
-    button.danger:hover {
-      background: var(--red);
-      color: #fff;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-      gap: 14px;
-      margin-bottom: 20px;
-    }
-
-    .stat-card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
-    }
-
-    .stat-label {
-      color: var(--muted);
-      font-size: 0.82rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .stat-value {
-      font-size: 1.55rem;
-      font-weight: 700;
-      margin-top: 4px;
-    }
-
-    .stat-sub {
-      font-size: 0.82rem;
-      color: var(--muted);
-      margin-top: 4px;
-    }
-
-    .bar-card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 16px;
-      margin-bottom: 20px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .bar-controls {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    input, select {
-      background: var(--bg);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 8px 10px;
-      font-size: 0.92rem;
-    }
-
-    input:focus, select:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-
-    .sync-status {
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
-
-    .main-grid {
-      display: grid;
-      grid-template-columns: 1.45fr 1fr;
-      gap: 20px;
-    }
-
-    @media (max-width: 860px) {
-      .main-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 18px;
-    }
-
-    .cal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-    }
-
-    .cal-header h2 {
-      font-size: 1.15rem;
-    }
-
-    .cal-nav {
-      display: flex;
-      gap: 6px;
-    }
-
-    .weekdays, .days-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
-    }
-
-    .weekdays div {
-      text-align: center;
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--muted);
-      padding-bottom: 6px;
-    }
-
-    .day-cell {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      min-height: 74px;
-      padding: 6px;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: border-color 0.15s ease;
-    }
-
-    .day-cell:hover {
-      border-color: var(--accent);
-    }
-
-    .day-cell.empty {
-      background: transparent;
-      border-color: transparent;
-      cursor: default;
-    }
-
-    .day-cell.selected {
-      border: 2px solid var(--accent);
-      background: rgba(56, 189, 248, 0.08);
-    }
-
-    .day-cell.today .day-num {
-      background: var(--accent);
-      color: #0f172a;
-      border-radius: 50%;
-      width: 22px;
-      height: 22px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-    }
-
-    .day-num {
-      font-size: 0.85rem;
-      font-weight: 600;
-    }
-
-    .day-amount {
-      font-size: 0.76rem;
-      font-weight: 700;
-      padding: 2px 5px;
-      border-radius: 4px;
-      text-align: right;
-      word-break: break-all;
-    }
-
-    .amt-ok {
-      color: var(--green);
-      background: rgba(34, 197, 94, 0.12);
-    }
-
-    .amt-warn {
-      color: var(--amber);
-      background: rgba(245, 158, 11, 0.12);
-    }
-
-    .amt-over {
-      color: var(--red);
-      background: rgba(239, 68, 68, 0.15);
-    }
-
-    .selected-title {
-      font-size: 1.1rem;
-      margin-bottom: 4px;
-    }
-
-    .selected-meta {
-      color: var(--muted);
-      font-size: 0.85rem;
-      margin-bottom: 14px;
-    }
-
-    .expense-form {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-
-    .expense-form .full {
-      grid-column: 1 / -1;
-    }
-
-    .expense-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      max-height: 330px;
-      overflow-y: auto;
-    }
-
-    .expense-item {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .expense-info strong {
-      display: block;
-      font-size: 0.95rem;
-    }
-
-    .expense-info span {
-      font-size: 0.78rem;
-      color: var(--muted);
-    }
-
-    .expense-right {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .expense-price {
-      font-weight: 700;
-      color: var(--accent);
-    }
-
-    .empty-msg {
-      color: var(--muted);
-      font-size: 0.9rem;
-      text-align: center;
-      padding: 20px 0;
-    }
-  </style>
+@media(max-width:900px){.overview,.split{grid-template-columns:1fr}}
+@media(max-width:520px){.wrap{padding:0 12px 40px}.day{min-height:54px;padding:4px}.da{font-size:.62rem}.card{padding:16px}.stats{grid-template-columns:1fr 1fr}.brand small{display:none}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>Daily Expense Calendar</h1>
-      <div class="header-actions">
-        <button class="secondary" id="todayBtn">Jump to Today</button>
-        <button class="secondary" id="pullCloudBtn">Pull Cloud</button>
-        <button class="secondary" id="exportBtn">Export JSON</button>
-        <button class="secondary" id="importBtn">Import JSON</button>
-        <input type="file" id="importFileInput" accept="application/json" hidden />
-      </div>
-    </header>
 
-    <!-- Cross-Device Cloud Sync Config (Stored locally per device) -->
-    <section class="bar-card">
-      <div>
-        <strong>Cross-Device Cloud Sync (Firebase RTDB):</strong>
-        <span class="sync-status" id="syncStatusText" style="margin-left: 6px;">Local only</span>
-      </div>
-      <div class="bar-controls">
-        <input
-          type="url"
-          id="dbUrlInput"
-          placeholder="https://your-app.firebaseio.com"
-          style="min-width: 240px;"
-        />
-        <input
-          type="text"
-          id="syncKeyInput"
-          placeholder="Private Sync Key (e.g. my-key-123)"
-          style="min-width: 180px;"
-        />
-        <button id="saveSyncBtn">Connect &amp; Sync</button>
-      </div>
-    </section>
-
-    <!-- Summary Metrics -->
-    <section class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-label">Total Spent Till Now (All Time)</div>
-        <div class="stat-value" id="totalAllTime">₹0.00</div>
-        <div class="stat-sub" id="totalEntriesCount">0 total entries logged</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">This Month's Spending</div>
-        <div class="stat-value" id="totalMonth">₹0.00</div>
-        <div class="stat-sub" id="monthLabelSub">-</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Selected Date Total</div>
-        <div class="stat-value" id="totalSelectedDay">₹0.00</div>
-        <div class="stat-sub" id="budgetStatusSub">No daily limit set</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Daily Average (Active Days)</div>
-        <div class="stat-value" id="avgPerDay">₹0.00</div>
-        <div class="stat-sub">Across days with spending</div>
-      </div>
-    </section>
-
-    <!-- Daily Budget / Target Setter -->
-    <section class="bar-card">
-      <div>
-        <strong>Daily Expense Limit:</strong>
-        <span id="currentLimitText" style="color: var(--accent); margin-left: 6px;">Not set</span>
-      </div>
-      <div class="bar-controls">
-        <input type="number" id="dailyLimitInput" min="0" step="10" placeholder="Set daily limit (₹)" />
-        <button id="saveLimitBtn">Save Limit</button>
-      </div>
-    </section>
-
-    <!-- Main Calendar + Daily Entry Editor -->
-    <section class="main-grid">
-      <div class="card">
-        <div class="cal-header">
-          <h2 id="monthYearHeading">Month Year</h2>
-          <div class="cal-nav">
-            <button class="secondary" id="prevMonthBtn">&larr; Prev</button>
-            <button class="secondary" id="nextMonthBtn">Next &rarr;</button>
-          </div>
-        </div>
-        <div class="weekdays">
-          <div>Sun</div>
-          <div>Mon</div>
-          <div>Tue</div>
-          <div>Wed</div>
-          <div>Thu</div>
-          <div>Fri</div>
-          <div>Sat</div>
-        </div>
-        <div class="days-grid" id="daysGrid"></div>
-      </div>
-
-      <div class="card">
-        <h3 class="selected-title" id="selectedDateHeading">Selected Date</h3>
-        <p class="selected-meta" id="selectedDateMeta">Add an expense item or log what you spent so far today.</p>
-
-        <form class="expense-form" id="expenseForm">
-          <input
-            type="text"
-            id="titleInput"
-            class="full"
-            placeholder="What did you spend on? (e.g., Bus pass, Lunch, Groceries)"
-            required
-          />
-          <input
-            type="number"
-            id="amountInput"
-            min="0.01"
-            step="0.01"
-            placeholder="Amount (₹)"
-            required
-          />
-          <select id="categoryInput">
-            <option value="Food & Dining">Food &amp; Dining</option>
-            <option value="Travel & Commute">Travel &amp; Commute</option>
-            <option value="Bills & Recharge">Bills &amp; Recharge</option>
-            <option value="Shopping">Shopping</option>
-            <option value="Study & Books">Study &amp; Books</option>
-            <option value="Other">Other</option>
-          </select>
-          <button type="submit" class="full">+ Add Expense</button>
-        </form>
-
-        <ul class="expense-list" id="expenseList"></ul>
-      </div>
-    </section>
+<!-- SECTION 1: TOP BAR -->
+<header class="top"><div class="in">
+  <div class="brand"><div class="logo">₹</div><div><h1>Daily Expense Calendar</h1><small>Track every rupee, day by day</small></div></div>
+  <div class="actions">
+    <button class="sync-pill" id="syncPill" title="Open sync settings"><i class="dot" id="syncDot"></i><span id="syncStatusText">Local only</span></button>
+    <button class="btn" id="todayBtn">Today</button>
+    <button class="btn" id="pullCloudBtn">Pull cloud</button>
+    <button class="btn" id="exportBtn">Export</button>
+    <button class="btn" id="importBtn">Import</button>
+    <button class="btn" id="settingsBtn">Settings</button>
+    <button class="btn" id="themeBtn" aria-label="Toggle theme">🌓</button>
+    <input type="file" id="importFileInput" accept="application/json" hidden>
   </div>
+</div></header>
 
-  <script>
-    const STORAGE_KEY = "daily_expense_tracker_v1";
-    const LIMIT_KEY = "daily_expense_limit_v1";
-    const SYNC_CFG_KEY = "daily_expense_sync_cfg_v1";
+<div class="wrap">
 
-    const state = {
-      expenses: loadExpenses(),
-      dailyLimit: loadLimit(),
-      syncConfig: loadSyncConfig(),
-      selectedDate: formatDateISO(new Date()),
-      viewYear: new Date().getFullYear(),
-      viewMonth: new Date().getMonth()
+<!-- SECTION 2: OVERVIEW -->
+<section>
+  <div class="sec-h"><h2>OVERVIEW</h2></div>
+  <div class="overview">
+    <div class="card hero">
+      <div class="lbl" id="monthLabelSub">Spent this month</div>
+      <div class="big" id="totalMonth">₹0.00</div>
+      <div class="meter"><i id="meterBar"></i></div>
+      <div class="sub"><span id="meterText">No daily limit set</span><span id="monthDays">0 active days</span></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="l">All time</div><div class="v" id="totalAllTime">₹0.00</div><div class="s" id="totalEntriesCount">0 entries</div></div>
+      <div class="stat"><div class="l">Selected day</div><div class="v" id="totalSelectedDay">₹0.00</div><div class="s" id="budgetStatusSub">No daily limit set</div></div>
+      <div class="stat"><div class="l">Daily average</div><div class="v" id="avgPerDay">₹0.00</div><div class="s">Across days with spending</div></div>
+      <div class="stat"><div class="l">Daily limit</div><div class="v" id="currentLimitText">Not set</div><div class="s">Change in Settings</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3: CATEGORY BREAKDOWN -->
+<section>
+  <div class="sec-h"><h2>WHERE IT WENT</h2><span class="stat s" style="border:0;padding:0;background:none" id="catMonth"></span></div>
+  <div class="card">
+    <div class="stack" id="catStack"></div>
+    <div class="legend" id="catLegend"></div>
+  </div>
+</section>
+
+<!-- SECTION 4: CALENDAR + DAY -->
+<section>
+  <div class="sec-h"><h2>CALENDAR</h2></div>
+  <div class="split">
+    <div class="card">
+      <div class="cal-h">
+        <h3 id="monthYearHeading">Month Year</h3>
+        <div class="nav"><button class="btn sm" id="prevMonthBtn">← Prev</button><button class="btn sm" id="nextMonthBtn">Next →</button></div>
+      </div>
+      <div class="wk"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div>
+      <div class="days" id="daysGrid"></div>
+      <div class="key"><span><i style="background:color-mix(in srgb,var(--brand) 30%,var(--soft))"></i>Spending</span><span><i style="background:color-mix(in srgb,var(--warn) 30%,var(--soft))"></i>Near limit</span><span><i style="background:color-mix(in srgb,var(--over) 32%,var(--soft))"></i>Over limit</span></div>
+    </div>
+
+    <div class="card day-h">
+      <h3 id="selectedDateHeading">Selected date</h3>
+      <p id="selectedDateMeta">Add an expense for this day.</p>
+      <form class="form" id="expenseForm">
+        <input class="full" type="text" id="titleInput" placeholder="What did you spend on? (e.g. Lunch, Bus pass)" required>
+        <input type="number" id="amountInput" min="0.01" step="0.01" placeholder="Amount (₹)" required inputmode="decimal">
+        <select id="categoryInput"></select>
+        <button type="submit" class="btn primary full" id="submitBtn">Add expense</button>
+        <button type="button" class="btn ghost full hidden" id="cancelEditBtn" style="display:none">Cancel editing</button>
+      </form>
+      <ul class="list" id="expenseList"></ul>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<!-- SECTION 5: SETTINGS DIALOG -->
+<dialog id="settingsDlg">
+  <h3>Settings</h3>
+  <p class="hint">Saved on this device. Cloud sync uses your own Firebase Realtime Database.</p>
+  <label for="dailyLimitInput">Daily expense limit (₹)</label>
+  <input type="number" id="dailyLimitInput" min="0" step="10" placeholder="e.g. 500 (0 clears the limit)">
+  <label for="dbUrlInput">Firebase database URL</label>
+  <input type="url" id="dbUrlInput" placeholder="https://your-app.firebaseio.com">
+  <label for="syncKeyInput">Private sync key</label>
+  <input type="text" id="syncKeyInput" placeholder="e.g. my-key-123">
+  <div class="row"><button class="btn" id="closeDlg">Close</button><button class="btn primary" id="saveSettingsBtn">Save &amp; sync</button></div>
+</dialog>
+<div id="toast" role="status"></div>
+
+<script>
+const STORAGE_KEY="daily_expense_tracker_v1",LIMIT_KEY="daily_expense_limit_v1",SYNC_CFG_KEY="daily_expense_sync_cfg_v1",UPD_KEY="daily_expense_updated_v1",THEME_KEY="daily_expense_theme_v1";
+const CATS=[["Food & Dining","#e8743b"],["Travel & Commute","#2f80ed"],["Bills & Recharge","#8b5cf6"],["Shopping","#e0457b"],["Study & Books","#0f9d84"],["Other","#7b8794"]];
+const catColor=n=>(CATS.find(c=>c[0]===n)||CATS[5])[1];
+const $=id=>document.getElementById(id);
+
+const ls={get(k){try{return localStorage.getItem(k)}catch{return null}},set(k,v){try{localStorage.setItem(k,v)}catch{}}};
+const state={expenses:loadJSON(STORAGE_KEY,{}),dailyLimit:loadLimit(),syncConfig:loadJSON(SYNC_CFG_KEY,{dbUrl:"",syncKey:""}),
+  selectedDate:iso(new Date()),viewYear:new Date().getFullYear(),viewMonth:new Date().getMonth(),editingId:null};
+function loadJSON(k,d){try{const r=ls.get(k);return r?JSON.parse(r):d}catch{return d}}
+function loadLimit(){const n=parseFloat(ls.get(LIMIT_KEY));return Number.isFinite(n)&&n>0?n:0}
+function iso(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+const money=n=>"₹"+Number(n||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+const sum=l=>(l||[]).reduce((s,i)=>s+Number(i.amount||0),0);
+const dayTotal=d=>sum(state.expenses[d]);
+
+/* toast + status */
+let tt;function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),2200)}
+function setSync(text,cls=""){$("syncStatusText").textContent=text;$("syncDot").className="dot "+cls}
+
+/* cloud sync (newest write wins) */
+function endpoint(){const b=(state.syncConfig.dbUrl||"").trim().replace(/\/+$/,""),k=encodeURIComponent((state.syncConfig.syncKey||"").trim());return b&&k?`${b}/expense_trackers/${k}.json`:null}
+async function pushToCloud(){
+  const ep=endpoint();if(!ep){setSync("Local only");return}
+  setSync("Syncing…","busy");
+  try{
+    const r=await fetch(ep,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({expenses:state.expenses,dailyLimit:state.dailyLimit,updatedAt:ls.get(UPD_KEY)||new Date().toISOString()})});
+    if(!r.ok)throw new Error("HTTP "+r.status);setSync("Synced","ok");
+  }catch(e){setSync("Sync failed","err");toast("Sync failed: "+e.message)}
+}
+async function pullFromCloud(){
+  const ep=endpoint();if(!ep){setSync("Local only");toast("Add your database URL and key in Settings");return}
+  setSync("Fetching…","busy");
+  try{
+    const r=await fetch(ep);if(!r.ok)throw new Error("HTTP "+r.status);
+    const d=await r.json();
+    if(!d||typeof d!=="object"){setSync("Connected","ok");await pushToCloud();return}
+    const local=ls.get(UPD_KEY)||"";
+    if(d.updatedAt&&d.updatedAt>local){
+      if(d.expenses&&typeof d.expenses==="object")state.expenses=d.expenses;
+      if(typeof d.dailyLimit==="number"&&d.dailyLimit>=0)state.dailyLimit=d.dailyLimit;
+      ls.set(STORAGE_KEY,JSON.stringify(state.expenses));ls.set(LIMIT_KEY,String(state.dailyLimit));ls.set(UPD_KEY,d.updatedAt);
+      renderAll();setSync("Loaded latest","ok");toast("Loaded newer data from the cloud");
+    }else{await pushToCloud();toast("Your local data is newer, so I pushed it to the cloud")}
+  }catch(e){setSync("Pull failed","err");toast("Pull failed: "+e.message)}
+}
+function persist(push=true){
+  ls.set(STORAGE_KEY,JSON.stringify(state.expenses));ls.set(LIMIT_KEY,String(state.dailyLimit));ls.set(UPD_KEY,new Date().toISOString());
+  if(push)pushToCloud();
+}
+
+/* render: overview */
+function renderSummary(){
+  let all=0,entries=0,active=0,month=0,monthActive=0;
+  const pre=`${state.viewYear}-${String(state.viewMonth+1).padStart(2,"0")}`;
+  for(const [d,l] of Object.entries(state.expenses)){
+    if(!Array.isArray(l)||!l.length)continue;
+    const s=sum(l);all+=s;entries+=l.length;if(s>0)active++;
+    if(d.startsWith(pre)){month+=s;if(s>0)monthActive++}
+  }
+  const name=new Date(state.viewYear,state.viewMonth,1).toLocaleString("default",{month:"long",year:"numeric"});
+  $("totalAllTime").textContent=money(all);
+  $("totalEntriesCount").textContent=`${entries} ${entries===1?"entry":"entries"} logged`;
+  $("totalMonth").textContent=money(month);
+  $("monthLabelSub").textContent=`Spent in ${name}`;
+  $("monthDays").textContent=`${monthActive} active ${monthActive===1?"day":"days"}`;
+  $("avgPerDay").textContent=money(active?all/active:0);
+  const sel=dayTotal(state.selectedDate),sub=$("budgetStatusSub");
+  $("totalSelectedDay").textContent=money(sel);
+  const bar=$("meterBar");
+  if(state.dailyLimit>0){
+    $("currentLimitText").textContent=money(state.dailyLimit).replace(".00","");
+    const diff=state.dailyLimit-sel;
+    sub.textContent=diff>=0?`${money(diff)} left today`:`${money(-diff)} over the limit`;
+    sub.style.color=diff>=0?"var(--brand)":"var(--over)";
+    const dim=new Date(state.viewYear,state.viewMonth+1,0).getDate(),budget=state.dailyLimit*dim,pct=month/budget*100;
+    bar.style.width=Math.min(100,pct)+"%";bar.className=pct>100?"over":pct>80?"warn":"";
+    $("meterText").textContent=`${Math.round(pct)}% of ${money(budget).replace(".00","")} monthly budget`;
+  }else{
+    $("currentLimitText").textContent="Not set";sub.textContent="No daily limit set";sub.style.color="";
+    bar.style.width="0";$("meterText").textContent="Set a daily limit in Settings to see your budget";
+  }
+  /* categories for viewed month */
+  const by={};let tot=0;
+  for(const [d,l] of Object.entries(state.expenses)){if(!d.startsWith(pre))continue;for(const i of l||[]){by[i.category]=(by[i.category]||0)+Number(i.amount||0);tot+=Number(i.amount||0)}}
+  $("catMonth").textContent=name;
+  const rows=CATS.map(c=>[c[0],c[1],by[c[0]]||0]);
+  $("catStack").innerHTML=tot?rows.filter(r=>r[2]>0).map(r=>`<i style="width:${r[2]/tot*100}%;background:${r[1]}" title="${r[0]}"></i>`).join(""):"";
+  $("catLegend").innerHTML=rows.map(r=>`<div class="lg"><span class="sw" style="background:${r[1]}"></span>${r[0]}<b>${money(r[2]).replace(".00","")}</b><em>${tot?Math.round(r[2]/tot*100):0}%</em></div>`).join("");
+}
+
+/* render: calendar */
+function renderCalendar(){
+  const g=$("daysGrid");g.innerHTML="";
+  const first=new Date(state.viewYear,state.viewMonth,1),start=first.getDay(),dim=new Date(state.viewYear,state.viewMonth+1,0).getDate(),today=iso(new Date());
+  $("monthYearHeading").textContent=first.toLocaleString("default",{month:"long",year:"numeric"});
+  let max=0;for(let d=1;d<=dim;d++)max=Math.max(max,dayTotal(iso(new Date(state.viewYear,state.viewMonth,d))));
+  for(let i=0;i<start;i++){const b=document.createElement("div");b.className="day empty";g.appendChild(b)}
+  for(let d=1;d<=dim;d++){
+    const ds=iso(new Date(state.viewYear,state.viewMonth,d)),t=dayTotal(ds),c=document.createElement("button");
+    c.type="button";c.className="day";if(ds===today)c.classList.add("today");if(ds===state.selectedDate)c.classList.add("sel");
+    if(t>0){
+      if(state.dailyLimit>0)c.classList.add(t>state.dailyLimit?"over":t>=state.dailyLimit*.8?"warn":"h"+(t/state.dailyLimit>.5?2:1));
+      else c.classList.add("h"+(t/max>.66?3:t/max>.33?2:1));
+    }
+    const n=document.createElement("span");n.className="dn";n.textContent=d;c.appendChild(n);
+    if(t>0){const a=document.createElement("span");a.className="da";a.textContent="₹"+Math.round(t).toLocaleString("en-IN");c.appendChild(a)}
+    c.onclick=()=>{state.selectedDate=ds;cancelEdit();renderAll()};
+    g.appendChild(c);
+  }
+}
+
+/* render: selected day */
+function renderDay(){
+  const [y,m,d]=state.selectedDate.split("-").map(Number);
+  $("selectedDateHeading").textContent=new Date(y,m-1,d).toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"short",year:"numeric"});
+  const items=state.expenses[state.selectedDate]||[];
+  $("selectedDateMeta").textContent=items.length?`${items.length} ${items.length===1?"expense":"expenses"} · ${money(sum(items))}`:"Add an expense for this day.";
+  const ul=$("expenseList");ul.innerHTML="";
+  if(!items.length){const li=document.createElement("li");li.className="none";li.textContent="Nothing logged yet. Add your first expense above.";ul.appendChild(li);return}
+  items.forEach(it=>{
+    const li=document.createElement("li");li.className="item";
+    const sw=document.createElement("span");sw.className="sw";sw.style.background=catColor(it.category);
+    const t=document.createElement("div");t.className="t";
+    const s=document.createElement("strong");s.textContent=it.title;
+    const c=document.createElement("span");c.textContent=it.category;t.append(s,c);
+    const p=document.createElement("span");p.className="p";p.textContent=money(it.amount);
+    const a=document.createElement("div");a.className="acts";
+    const e=document.createElement("button");e.className="btn sm";e.type="button";e.textContent="Edit";e.onclick=()=>startEdit(it);
+    const x=document.createElement("button");x.className="btn sm danger";x.type="button";x.textContent="Delete";
+    x.onclick=()=>{
+      state.expenses[state.selectedDate]=items.filter(i=>i.id!==it.id);
+      if(!state.expenses[state.selectedDate].length)delete state.expenses[state.selectedDate];
+      persist();renderAll();toast("Expense deleted");
     };
+    a.append(e,x);li.append(sw,t,p,a);ul.appendChild(li);
+  });
+}
+function renderAll(){renderSummary();renderCalendar();renderDay()}
 
-    function loadExpenses() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : {};
-      } catch {
-        return {};
+/* edit flow */
+function startEdit(it){
+  state.editingId=it.id;$("titleInput").value=it.title;$("amountInput").value=it.amount;$("categoryInput").value=it.category;
+  $("submitBtn").textContent="Save changes";$("cancelEditBtn").style.display="block";$("titleInput").focus();
+}
+function cancelEdit(){state.editingId=null;$("expenseForm").reset();$("submitBtn").textContent="Add expense";$("cancelEditBtn").style.display="none"}
+$("cancelEditBtn").onclick=cancelEdit;
+
+$("categoryInput").innerHTML=CATS.map(c=>`<option value="${c[0]}">${c[0]}</option>`).join("");
+$("expenseForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const title=$("titleInput").value.trim(),amount=parseFloat($("amountInput").value),category=$("categoryInput").value;
+  if(!title||!Number.isFinite(amount)||amount<=0)return;
+  const list=state.expenses[state.selectedDate]=state.expenses[state.selectedDate]||[];
+  if(state.editingId){
+    const it=list.find(i=>i.id===state.editingId);
+    if(it){it.title=title;it.amount=Math.round(amount*100)/100;it.category=category}
+    toast("Expense updated");
+  }else{
+    list.push({id:Date.now()+Math.random(),title,amount:Math.round(amount*100)/100,category});toast("Expense added");
+  }
+  cancelEdit();persist();renderAll();
+});
+
+/* calendar nav */
+$("prevMonthBtn").onclick=()=>{if(--state.viewMonth<0){state.viewMonth=11;state.viewYear--}renderAll()};
+$("nextMonthBtn").onclick=()=>{if(++state.viewMonth>11){state.viewMonth=0;state.viewYear++}renderAll()};
+$("todayBtn").onclick=()=>{const n=new Date();state.viewYear=n.getFullYear();state.viewMonth=n.getMonth();state.selectedDate=iso(n);cancelEdit();renderAll()};
+
+/* settings */
+const dlg=$("settingsDlg");
+function openSettings(){
+  $("dailyLimitInput").value=state.dailyLimit||"";$("dbUrlInput").value=state.syncConfig.dbUrl||"";$("syncKeyInput").value=state.syncConfig.syncKey||"";
+  dlg.showModal();
+}
+$("settingsBtn").onclick=openSettings;$("syncPill").onclick=openSettings;$("closeDlg").onclick=()=>dlg.close();
+dlg.addEventListener("click",e=>{if(e.target===dlg)dlg.close()});
+$("saveSettingsBtn").onclick=async()=>{
+  const v=parseFloat($("dailyLimitInput").value);
+  state.dailyLimit=Number.isFinite(v)&&v>0?v:0;
+  state.syncConfig={dbUrl:$("dbUrlInput").value.trim(),syncKey:$("syncKeyInput").value.trim()};
+  ls.set(SYNC_CFG_KEY,JSON.stringify(state.syncConfig));
+  persist(false);renderAll();dlg.close();toast("Settings saved");
+  if(endpoint())await pullFromCloud();else setSync("Local only");
+};
+$("pullCloudBtn").onclick=pullFromCloud;
+
+/* export / import (de-duplicated) */
+$("exportBtn").onclick=()=>{
+  const blob=new Blob([JSON.stringify({expenses:state.expenses,dailyLimit:state.dailyLimit},null,2)],{type:"application/json"});
+  const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=`expenses-${iso(new Date())}.json`;a.click();URL.revokeObjectURL(u);toast("Export ready");
+};
+$("importBtn").onclick=()=>$("importFileInput").click();
+$("importFileInput").addEventListener("change",async e=>{
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  try{
+    const p=JSON.parse(await f.text());
+    const imp=p.expenses&&typeof p.expenses==="object"?p.expenses:p;
+    if(!imp||typeof imp!=="object")throw new Error("Invalid JSON format");
+    const sig=i=>`${i.title}|${i.amount}|${i.category}`;let added=0;
+    for(const [d,items] of Object.entries(imp)){
+      if(!Array.isArray(items))continue;
+      const ex=state.expenses[d]||[],ids=new Set(ex.map(x=>x.id)),sigs=new Set(ex.map(sig));
+      for(const it of items){
+        if(!it||typeof it.amount!=="number"||!it.title)continue;
+        if((it.id&&ids.has(it.id))||sigs.has(sig(it)))continue;
+        ex.push({...it,id:it.id||Date.now()+Math.random(),category:it.category||"Other"});sigs.add(sig(it));added++;
       }
+      if(ex.length)state.expenses[d]=ex;
     }
+    if(typeof p.dailyLimit==="number"&&p.dailyLimit>0)state.dailyLimit=p.dailyLimit;
+    persist();renderAll();toast(added?`Imported ${added} new ${added===1?"expense":"expenses"}`:"Nothing new to import");
+  }catch(err){toast("Could not import: "+err.message)}finally{e.target.value=""}
+});
 
-    function loadLimit() {
-      try {
-        const raw = localStorage.getItem(LIMIT_KEY);
-        const num = parseFloat(raw);
-        return Number.isFinite(num) && num > 0 ? num : 0;
-      } catch {
-        return 0;
-      }
-    }
+/* theme */
+function applyTheme(t){document.documentElement.dataset.theme=t}
+applyTheme(ls.get(THEME_KEY)||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));
+$("themeBtn").onclick=()=>{const t=document.documentElement.dataset.theme==="dark"?"light":"dark";applyTheme(t);ls.set(THEME_KEY,t)};
 
-    function loadSyncConfig() {
-      try {
-        const raw = localStorage.getItem(SYNC_CFG_KEY);
-        return raw ? JSON.parse(raw) : { dbUrl: "", syncKey: "" };
-      } catch {
-        return { dbUrl: "", syncKey: "" };
-      }
-    }
-
-    function saveSyncConfig(cfg) {
-      state.syncConfig = cfg;
-      try {
-        localStorage.setItem(SYNC_CFG_KEY, JSON.stringify(cfg));
-      } catch {}
-    }
-
-    function setSyncStatus(text, color = "var(--muted)") {
-      const el = document.getElementById("syncStatusText");
-      el.textContent = text;
-      el.style.color = color;
-    }
-
-    function getCloudEndpoint() {
-      const base = (state.syncConfig.dbUrl || "").trim().replace(/\/+$/, "");
-      const key = encodeURIComponent((state.syncConfig.syncKey || "").trim());
-      if (!base || !key) return null;
-      return `${base}/expense_trackers/${key}.json`;
-    }
-
-    async function pushToCloud() {
-      const endpoint = getCloudEndpoint();
-      if (!endpoint) {
-        setSyncStatus("Local only (enter DB URL + Sync Key)");
-        return;
-      }
-      setSyncStatus("Syncing...", "var(--amber)");
-      try {
-        const payload = {
-          expenses: state.expenses,
-          dailyLimit: state.dailyLimit,
-          updatedAt: new Date().toISOString()
-        };
-        const res = await fetch(endpoint, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        setSyncStatus("Synced to cloud", "var(--green)");
-      } catch (err) {
-        setSyncStatus(`Sync failed (${err.message})`, "var(--red)");
-      }
-    }
-
-    async function pullFromCloud() {
-      const endpoint = getCloudEndpoint();
-      if (!endpoint) {
-        setSyncStatus("Local only (enter DB URL + Sync Key)");
-        return;
-      }
-      setSyncStatus("Fetching cloud data...", "var(--amber)");
-      try {
-        const res = await fetch(endpoint);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        if (data && typeof data === "object") {
-          if (data.expenses && typeof data.expenses === "object") {
-            state.expenses = data.expenses;
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state.expenses));
-          }
-          if (typeof data.dailyLimit === "number" && data.dailyLimit >= 0) {
-            state.dailyLimit = data.dailyLimit;
-            localStorage.setItem(LIMIT_KEY, String(state.dailyLimit));
-            document.getElementById("dailyLimitInput").value = state.dailyLimit || "";
-          }
-          renderAll();
-          setSyncStatus("Loaded latest cloud data", "var(--green)");
-        } else {
-          setSyncStatus("Connected (no cloud data yet)", "var(--accent)");
-        }
-      } catch (err) {
-        setSyncStatus(`Pull failed (${err.message})`, "var(--red)");
-      }
-    }
-
-    function persistAll(shouldPushCloud = true) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.expenses));
-        localStorage.setItem(LIMIT_KEY, String(state.dailyLimit));
-      } catch (err) {
-        alert("Could not save to browser storage: " + err.message);
-      }
-      if (shouldPushCloud) {
-        pushToCloud();
-      }
-    }
-
-    function formatDateISO(date) {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, "0");
-      const d = String(date.getDate()).padStart(2, "0");
-      return `${y}-${m}-${d}`;
-    }
-
-    function formatCurrency(num) {
-      return "₹" + Number(num || 0).toLocaleString("en-IN", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
-    }
-
-    function getDayTotal(dateStr) {
-      const list = state.expenses[dateStr] || [];
-      return list.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-    }
-
-    function renderSummary() {
-      let allTimeTotal = 0;
-      let totalEntries = 0;
-      let activeDays = 0;
-      let monthTotal = 0;
-
-      const monthPrefix = `${state.viewYear}-${String(state.viewMonth + 1).padStart(2, "0")}`;
-
-      for (const [dateStr, list] of Object.entries(state.expenses)) {
-        if (!Array.isArray(list) || list.length === 0) continue;
-        const daySum = list.reduce((s, item) => s + Number(item.amount || 0), 0);
-        allTimeTotal += daySum;
-        totalEntries += list.length;
-        if (daySum > 0) activeDays += 1;
-        if (dateStr.startsWith(monthPrefix)) {
-          monthTotal += daySum;
-        }
-      }
-
-      const selectedTotal = getDayTotal(state.selectedDate);
-      const avg = activeDays > 0 ? allTimeTotal / activeDays : 0;
-
-      document.getElementById("totalAllTime").textContent = formatCurrency(allTimeTotal);
-      document.getElementById("totalEntriesCount").textContent =
-        `${totalEntries} ${totalEntries === 1 ? "entry" : "entries"} logged`;
-
-      const monthName = new Date(state.viewYear, state.viewMonth, 1).toLocaleString("default", {
-        month: "long",
-        year: "numeric"
-      });
-      document.getElementById("totalMonth").textContent = formatCurrency(monthTotal);
-      document.getElementById("monthLabelSub").textContent = monthName;
-
-      document.getElementById("totalSelectedDay").textContent = formatCurrency(selectedTotal);
-      document.getElementById("avgPerDay").textContent = formatCurrency(avg);
-
-      const limitText = document.getElementById("currentLimitText");
-      const budgetSub = document.getElementById("budgetStatusSub");
-
-      if (state.dailyLimit > 0) {
-        limitText.textContent = formatCurrency(state.dailyLimit);
-        const diff = state.dailyLimit - selectedTotal;
-        if (diff >= 0) {
-          budgetSub.textContent = `${formatCurrency(diff)} remaining under daily limit`;
-          budgetSub.style.color = "var(--green)";
-        } else {
-          budgetSub.textContent = `${formatCurrency(Math.abs(diff))} over daily limit`;
-          budgetSub.style.color = "var(--red)";
-        }
-      } else {
-        limitText.textContent = "Not set";
-        budgetSub.textContent = "No daily limit set";
-        budgetSub.style.color = "var(--muted)";
-      }
-    }
-
-    function renderCalendar() {
-      const grid = document.getElementById("daysGrid");
-      grid.innerHTML = "";
-
-      const firstDay = new Date(state.viewYear, state.viewMonth, 1);
-      const startWeekday = firstDay.getDay();
-      const daysInMonth = new Date(state.viewYear, state.viewMonth + 1, 0).getDate();
-      const todayISO = formatDateISO(new Date());
-
-      document.getElementById("monthYearHeading").textContent = firstDay.toLocaleString("default", {
-        month: "long",
-        year: "numeric"
-      });
-
-      for (let i = 0; i < startWeekday; i++) {
-        const blank = document.createElement("div");
-        blank.className = "day-cell empty";
-        grid.appendChild(blank);
-      }
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const dateObj = new Date(state.viewYear, state.viewMonth, day);
-        const dateStr = formatDateISO(dateObj);
-        const total = getDayTotal(dateStr);
-
-        const cell = document.createElement("div");
-        cell.className = "day-cell";
-        if (dateStr === todayISO) cell.classList.add("today");
-        if (dateStr === state.selectedDate) cell.classList.add("selected");
-
-        const top = document.createElement("div");
-        top.className = "day-num";
-        top.textContent = day;
-        cell.appendChild(top);
-
-        if (total > 0) {
-          const badge = document.createElement("div");
-          badge.className = "day-amount";
-          if (state.dailyLimit > 0) {
-            if (total > state.dailyLimit) badge.classList.add("amt-over");
-            else if (total >= state.dailyLimit * 0.8) badge.classList.add("amt-warn");
-            else badge.classList.add("amt-ok");
-          } else {
-            badge.classList.add("amt-ok");
-          }
-          badge.textContent = "₹" + Math.round(total).toLocaleString("en-IN");
-          cell.appendChild(badge);
-        }
-
-        cell.addEventListener("click", () => {
-          state.selectedDate = dateStr;
-          renderAll();
-        });
-
-        grid.appendChild(cell);
-      }
-    }
-
-    function renderSelectedDay() {
-      const [y, m, d] = state.selectedDate.split("-").map(Number);
-      const dateObj = new Date(y, m - 1, d);
-      const formatted = dateObj.toLocaleDateString("en-IN", {
-        weekday: "long",
-        day: "numeric",
-        month: "short",
-        year: "numeric"
-      });
-
-      document.getElementById("selectedDateHeading").textContent = formatted;
-
-      const listEl = document.getElementById("expenseList");
-      listEl.innerHTML = "";
-
-      const items = state.expenses[state.selectedDate] || [];
-      if (items.length === 0) {
-        const empty = document.createElement("li");
-        empty.className = "empty-msg";
-        empty.textContent = "No expenses logged for this date yet.";
-        listEl.appendChild(empty);
-        return;
-      }
-
-      items.forEach((item) => {
-        const li = document.createElement("li");
-        li.className = "expense-item";
-
-        const info = document.createElement("div");
-        info.className = "expense-info";
-        const strong = document.createElement("strong");
-        strong.textContent = item.title;
-        const cat = document.createElement("span");
-        cat.textContent = item.category;
-        info.append(strong, cat);
-
-        const right = document.createElement("div");
-        right.className = "expense-right";
-        const price = document.createElement("span");
-        price.className = "expense-price";
-        price.textContent = formatCurrency(item.amount);
-
-        const delBtn = document.createElement("button");
-        delBtn.className = "danger";
-        delBtn.type = "button";
-        delBtn.textContent = "Delete";
-        delBtn.addEventListener("click", () => {
-          state.expenses[state.selectedDate] = items.filter((x) => x.id !== item.id);
-          if (state.expenses[state.selectedDate].length === 0) {
-            delete state.expenses[state.selectedDate];
-          }
-          persistAll(true);
-          renderAll();
-        });
-
-        right.append(price, delBtn);
-        li.append(info, right);
-        listEl.appendChild(li);
-      });
-    }
-
-    function renderAll() {
-      renderSummary();
-      renderCalendar();
-      renderSelectedDay();
-    }
-
-    document.getElementById("expenseForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const title = document.getElementById("titleInput").value.trim();
-      const amount = parseFloat(document.getElementById("amountInput").value);
-      const category = document.getElementById("categoryInput").value;
-
-      if (!title || !Number.isFinite(amount) || amount <= 0) return;
-
-      if (!state.expenses[state.selectedDate]) {
-        state.expenses[state.selectedDate] = [];
-      }
-
-      state.expenses[state.selectedDate].push({
-        id: Date.now() + Math.random(),
-        title,
-        amount: Math.round(amount * 100) / 100,
-        category
-      });
-
-      persistAll(true);
-      e.target.reset();
-      renderAll();
-    });
-
-    document.getElementById("saveLimitBtn").addEventListener("click", () => {
-      const val = parseFloat(document.getElementById("dailyLimitInput").value);
-      if (Number.isFinite(val) && val >= 0) {
-        state.dailyLimit = val;
-        persistAll(true);
-        renderAll();
-      }
-    });
-
-    document.getElementById("saveSyncBtn").addEventListener("click", async () => {
-      const dbUrl = document.getElementById("dbUrlInput").value.trim();
-      const syncKey = document.getElementById("syncKeyInput").value.trim();
-      saveSyncConfig({ dbUrl, syncKey });
-      await pullFromCloud();
-    });
-
-    document.getElementById("pullCloudBtn").addEventListener("click", pullFromCloud);
-
-    document.getElementById("prevMonthBtn").addEventListener("click", () => {
-      state.viewMonth -= 1;
-      if (state.viewMonth < 0) {
-        state.viewMonth = 11;
-        state.viewYear -= 1;
-      }
-      renderAll();
-    });
-
-    document.getElementById("nextMonthBtn").addEventListener("click", () => {
-      state.viewMonth += 1;
-      if (state.viewMonth > 11) {
-        state.viewMonth = 0;
-        state.viewYear += 1;
-      }
-      renderAll();
-    });
-
-    document.getElementById("todayBtn").addEventListener("click", () => {
-      const now = new Date();
-      state.viewYear = now.getFullYear();
-      state.viewMonth = now.getMonth();
-      state.selectedDate = formatDateISO(now);
-      renderAll();
-    });
-
-    document.getElementById("exportBtn").addEventListener("click", () => {
-      const bundle = {
-        expenses: state.expenses,
-        dailyLimit: state.dailyLimit
-      };
-      const blob = new Blob([JSON.stringify(bundle, null, 2)], {
-        type: "application/json"
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `expenses-${formatDateISO(new Date())}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-
-    document.getElementById("importBtn").addEventListener("click", () => {
-      document.getElementById("importFileInput").click();
-    });
-
-    document.getElementById("importFileInput").addEventListener("change", async (e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      try {
-        const text = await file.text();
-        const parsed = JSON.parse(text);
-        const importedExpenses = parsed.expenses && typeof parsed.expenses === "object"
-          ? parsed.expenses
-          : parsed;
-
-        if (!importedExpenses || typeof importedExpenses !== "object") {
-          throw new Error("Invalid JSON format");
-        }
-
-        for (const [dateStr, items] of Object.entries(importedExpenses)) {
-          if (!Array.isArray(items)) continue;
-          const existing = state.expenses[dateStr] || [];
-          const seenIds = new Set(existing.map((x) => x.id));
-          const merged = [...existing];
-          for (const item of items) {
-            if (item && typeof item.amount === "number" && item.title) {
-              const id = item.id || (Date.now() + Math.random());
-              if (!seenIds.has(id)) {
-                merged.push({ ...item, id });
-              }
-            }
-          }
-          state.expenses[dateStr] = merged;
-        }
-
-        if (typeof parsed.dailyLimit === "number" && parsed.dailyLimit > 0) {
-          state.dailyLimit = parsed.dailyLimit;
-          document.getElementById("dailyLimitInput").value = state.dailyLimit;
-        }
-
-        persistAll(true);
-        renderAll();
-        alert("Expenses imported successfully!");
-      } catch (err) {
-        alert("Could not import JSON: " + err.message);
-      } finally {
-        e.target.value = "";
-      }
-    });
-
-    if (state.dailyLimit > 0) {
-      document.getElementById("dailyLimitInput").value = state.dailyLimit;
-    }
-    if (state.syncConfig.dbUrl) {
-      document.getElementById("dbUrlInput").value = state.syncConfig.dbUrl;
-    }
-    if (state.syncConfig.syncKey) {
-      document.getElementById("syncKeyInput").value = state.syncConfig.syncKey;
-    }
-
-    renderAll();
-    if (getCloudEndpoint()) {
-      pullFromCloud();
-    }
-  </script>
+/* boot */
+if(!ls.get(UPD_KEY))ls.set(UPD_KEY,"");
+renderAll();
+setSync(endpoint()?"Cloud ready":"Local only");
+if(endpoint())pullFromCloud();
+</script>
 </body>
 </html>
